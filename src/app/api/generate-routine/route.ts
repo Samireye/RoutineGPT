@@ -49,6 +49,7 @@ export async function POST(request: Request) {
     }
 
     console.log('Calling OpenAI API')
+    const startTime = Date.now();
     let completion
     try {
       completion = await openai.chat.completions.create({
@@ -59,7 +60,9 @@ export async function POST(request: Request) {
         ],
         temperature: 0.7,
       })
-      console.log('OpenAI response:', completion)
+      const duration = Date.now() - startTime;
+      console.log('OpenAI response:', completion);
+      console.log('OpenAI API call duration:', duration, 'ms');
     } catch (openaiError) {
       console.error('OpenAI API Error:', openaiError)
       return createJSONResponse({ error: 'Failed to generate routine from OpenAI' }, 500)
