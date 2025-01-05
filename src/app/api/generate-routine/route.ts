@@ -72,8 +72,17 @@ ${limitlessKnowledge}`
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const prompt = body.prompt
+    let body
+    try {
+      body = await request.json()
+    } catch (parseError) {
+      return NextResponse.json(
+        { error: 'Invalid request format' },
+        { status: 400 }
+      )
+    }
+
+    const prompt = body?.prompt
 
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json(
@@ -88,27 +97,46 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: 'OpenAI API key is not configured' },
+        { status: 500 }
+      )
+    }
     
     // Create a chat completion
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-    })
+    let completion
+    try {
+      completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+      })
+    } catch (openaiError) {
+      console.error('OpenAI API Error:', openaiError)
+      return NextResponse.json(
+        { error: 'Failed to generate routine. Please try again later.' },
+        { status: 500 }
+      )
+    }
 
-    const response = completion.choices[0].message.content
+    const response = completion.choices[0]?.message?.content
 
     if (!response) {
-      throw new Error('No response from OpenAI')
+      return NextResponse.json(
+        { error: 'No response generated. Please try again.' },
+        { status: 500 }
+      )
     }
 
     try {
@@ -121,16 +149,16 @@ export async function POST(request: Request) {
         }
       })
     } catch (dbError) {
+      // Log but don't fail the request
       console.error('Database error:', dbError)
-      // Continue even if database save fails
     }
 
     return NextResponse.json({ routine: response })
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Unexpected error:', error)
     return NextResponse.json(
-      { error: 'Sorry, there was a problem generating your routine. Please try again.' },
+      { error: 'An unexpected error occurred. Please try again.' },
       { status: 500 }
     )
   }
