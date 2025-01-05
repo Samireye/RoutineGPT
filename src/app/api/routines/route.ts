@@ -8,8 +8,10 @@ export async function GET() {
         createdAt: 'desc'
       }
     })
+    console.log('Fetched routines:', routines) // Log the fetched routines
     return NextResponse.json(routines)
-  } catch {
+  } catch (error) {
+    console.error('Error fetching routines:', error) // Log the error
     return NextResponse.json(
       { error: 'Failed to fetch routines' },
       { status: 500 }
@@ -24,7 +26,8 @@ export async function POST(request: Request) {
       data
     })
     return NextResponse.json(routine)
-  } catch {
+  } catch (error) {
+    console.error('Error creating routine:', error) // Log the error
     return NextResponse.json(
       { error: 'Failed to create routine' },
       { status: 500 }
