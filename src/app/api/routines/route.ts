@@ -9,7 +9,7 @@ export async function GET() {
       }
     })
     return NextResponse.json(routines)
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch routines' },
       { status: 500 }
@@ -19,18 +19,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { input, output, tags } = await request.json()
+    const data = await request.json()
     const routine = await prisma.routine.create({
-      data: {
-        input,
-        output,
-        tags
-      }
+      data
     })
     return NextResponse.json(routine)
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { error: 'Failed to save routine' },
+      { error: 'Failed to create routine' },
       { status: 500 }
     )
   }
