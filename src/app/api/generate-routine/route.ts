@@ -72,7 +72,22 @@ ${limitlessKnowledge}`
 
 export async function POST(request: Request) {
   try {
-    const { prompt } = await request.json()
+    const body = await request.json()
+    const prompt = body.prompt
+
+    if (!prompt || typeof prompt !== 'string') {
+      return NextResponse.json(
+        { error: 'Please provide a description of your routine goals' },
+        { status: 400 }
+      )
+    }
+
+    if (prompt.length > 1000) {
+      return NextResponse.json(
+        { error: 'Description is too long. Please keep it under 1000 characters.' },
+        { status: 400 }
+      )
+    }
     
     // Create a chat completion
     const completion = await openai.chat.completions.create({
@@ -96,21 +111,26 @@ export async function POST(request: Request) {
       throw new Error('No response from OpenAI')
     }
 
-    // Save the routine to the database
-    await prisma.routine.create({
-      data: {
-        input: prompt,
-        output: response,
-        tags: 'atomic-habits,5am-club,limitless'
-      }
-    })
+    try {
+      // Save the routine to the database
+      await prisma.routine.create({
+        data: {
+          input: prompt,
+          output: response,
+          tags: 'atomic-habits,5am-club,limitless'
+        }
+      })
+    } catch (dbError) {
+      console.error('Database error:', dbError)
+      // Continue even if database save fails
+    }
 
     return NextResponse.json({ routine: response })
 
   } catch (error) {
     console.error('Error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate routine' },
+      { error: 'Sorry, there was a problem generating your routine. Please try again.' },
       { status: 500 }
     )
   }
