@@ -44,6 +44,7 @@ export default function Home() {
     setError('')
     
     try {
+      console.log('Sending request to API...')
       const response = await fetch('/api/generate-routine', {
         method: 'POST',
         headers: {
@@ -52,7 +53,18 @@ export default function Home() {
         body: JSON.stringify({ prompt: routineInput }),
       })
 
-      const data = await response.json()
+      console.log('Response status:', response.status)
+      const text = await response.text()
+      console.log('Raw response:', text)
+
+      let data
+      try {
+        data = JSON.parse(text)
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError)
+        console.error('Response text:', text)
+        throw new Error('Invalid response from server')
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate routine')

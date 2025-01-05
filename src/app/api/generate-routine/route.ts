@@ -9,7 +9,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-// Escape special characters and ensure valid JSON
 const cleanString = (str: string) => str.replace(/[`'"]/g, '').trim()
 
 const systemPrompt = "You are an expert routine optimization assistant with deep knowledge from three transformative books:\n" +
@@ -22,23 +21,36 @@ const systemPrompt = "You are an expert routine optimization assistant with deep
   cleanString(limitlessKnowledge)
 
 export async function POST(request: Request) {
+  console.log('API route called')
+  
   if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json(
-      { error: 'OpenAI API key is not configured' },
-      { status: 500 }
+    console.error('OpenAI API key not configured')
+    return new NextResponse(
+      JSON.stringify({ error: 'OpenAI API key is not configured' }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     )
   }
 
   try {
-    const { prompt } = await request.json()
+    console.log('Parsing request body')
+    const body = await request.json()
+    const prompt = body?.prompt
 
     if (!prompt || typeof prompt !== 'string') {
-      return NextResponse.json(
-        { error: 'Please provide a description of your routine goals' },
-        { status: 400 }
+      console.error('Invalid or missing prompt')
+      return new NextResponse(
+        JSON.stringify({ error: 'Please provide a description of your routine goals' }),
+        { 
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }
       )
     }
 
+    console.log('Calling OpenAI API')
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
@@ -51,13 +63,18 @@ export async function POST(request: Request) {
     const response = completion.choices[0]?.message?.content
 
     if (!response) {
-      return NextResponse.json(
-        { error: 'No response generated' },
-        { status: 500 }
+      console.error('No response from OpenAI')
+      return new NextResponse(
+        JSON.stringify({ error: 'No response generated' }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
       )
     }
 
     try {
+      console.log('Saving to database')
       await prisma.routine.create({
         data: {
           input: prompt,
@@ -69,18 +86,24 @@ export async function POST(request: Request) {
       console.error('Database error:', dbError)
     }
 
-    return NextResponse.json({ routine: response })
+    console.log('Sending successful response')
+    return new NextResponse(
+      JSON.stringify({ routine: response }),
+      { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
   } catch (error) {
-    console.error('Error:', error)
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      )
-    }
-    return NextResponse.json(
-      { error: 'Failed to generate routine' },
-      { status: 500 }
+    console.error('API Error:', error)
+    return new NextResponse(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Failed to generate routine'
+      }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     )
   }
 }
