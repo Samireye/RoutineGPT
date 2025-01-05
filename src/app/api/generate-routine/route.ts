@@ -72,89 +72,88 @@ ${limitlessKnowledge}`
 
 export async function POST(request: Request) {
   try {
-    let body
     try {
-      body = await request.json()
-    } catch (parseError) {
-      return NextResponse.json(
-        { error: 'Invalid request format' },
-        { status: 400 }
-      )
-    }
+      const body = await request.json()
+      const prompt = body?.prompt
 
-    const prompt = body?.prompt
+      if (!prompt || typeof prompt !== 'string') {
+        return NextResponse.json(
+          { error: 'Please provide a description of your routine goals' },
+          { status: 400 }
+        )
+      }
 
-    if (!prompt || typeof prompt !== 'string') {
-      return NextResponse.json(
-        { error: 'Please provide a description of your routine goals' },
-        { status: 400 }
-      )
-    }
+      if (prompt.length > 1000) {
+        return NextResponse.json(
+          { error: 'Description is too long. Please keep it under 1000 characters.' },
+          { status: 400 }
+        )
+      }
 
-    if (prompt.length > 1000) {
-      return NextResponse.json(
-        { error: 'Description is too long. Please keep it under 1000 characters.' },
-        { status: 400 }
-      )
-    }
+      if (!process.env.OPENAI_API_KEY) {
+        return NextResponse.json(
+          { error: 'OpenAI API key is not configured' },
+          { status: 500 }
+        )
+      }
+      
+      // Create a chat completion
+      let completion
+      try {
+        completion = await openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+        })
+      } catch (openaiError) {
+        console.error('OpenAI API Error:', openaiError)
+        return NextResponse.json(
+          { error: 'Failed to generate routine. Please try again later.' },
+          { status: 500 }
+        )
+      }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: 'OpenAI API key is not configured' },
-        { status: 500 }
-      )
-    }
-    
-    // Create a chat completion
-    let completion
-    try {
-      completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: prompt
+      const response = completion.choices[0]?.message?.content
+
+      if (!response) {
+        return NextResponse.json(
+          { error: 'No response generated. Please try again.' },
+          { status: 500 }
+        )
+      }
+
+      try {
+        // Save the routine to the database
+        await prisma.routine.create({
+          data: {
+            input: prompt,
+            output: response,
+            tags: 'atomic-habits,5am-club,limitless'
           }
-        ],
-        temperature: 0.7,
-      })
-    } catch (openaiError) {
-      console.error('OpenAI API Error:', openaiError)
+        })
+      } catch (dbError) {
+        // Log but don't fail the request
+        console.error('Database error:', dbError)
+      }
+
+      return NextResponse.json({ routine: response })
+
+    } catch (error) {
+      console.error('Unexpected error:', error)
       return NextResponse.json(
-        { error: 'Failed to generate routine. Please try again later.' },
+        { error: 'An unexpected error occurred. Please try again.' },
         { status: 500 }
       )
     }
-
-    const response = completion.choices[0]?.message?.content
-
-    if (!response) {
-      return NextResponse.json(
-        { error: 'No response generated. Please try again.' },
-        { status: 500 }
-      )
-    }
-
-    try {
-      // Save the routine to the database
-      await prisma.routine.create({
-        data: {
-          input: prompt,
-          output: response,
-          tags: 'atomic-habits,5am-club,limitless'
-        }
-      })
-    } catch (dbError) {
-      // Log but don't fail the request
-      console.error('Database error:', dbError)
-    }
-
-    return NextResponse.json({ routine: response })
-
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json(
