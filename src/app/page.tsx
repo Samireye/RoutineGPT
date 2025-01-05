@@ -52,16 +52,14 @@ export default function Home() {
         body: JSON.stringify({ prompt: routineInput }),
       })
 
-      let data
-      try {
-        data = await response.json()
-      } catch (parseError) {
-        console.error('JSON Parse Error:', parseError)
-        throw new Error('There was a problem communicating with the server. Please try again.')
-      }
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to generate routine')
+        throw new Error(data.error || 'Failed to generate routine')
+      }
+
+      if (!data.routine) {
+        throw new Error('No routine was generated')
       }
 
       setGeneratedRoutine(data.routine)
