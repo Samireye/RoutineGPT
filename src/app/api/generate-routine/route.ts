@@ -2,7 +2,9 @@ import OpenAI from 'openai'
 import { atomicHabitsKnowledge } from '@/lib/atomic-habits'
 import { fiveAmClubKnowledge } from '@/lib/fiveam-club'
 import { limitlessKnowledge } from '@/lib/limitless'
+import { PrismaClient } from '@prisma/client'
 
+const prisma = new PrismaClient()
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
@@ -75,8 +77,27 @@ export async function POST(request: Request) {
       return createJSONResponse({ error: 'No response generated' }, 500)
     }
 
+    const routine = response;
+    console.log('Created routine:', routine); // Log the created routine
+
+    console.log('Test fetch from Routine table:')
+    const testRoutine = await prisma.routine.findMany();
+    console.log('Test fetch from Routine table:', testRoutine);
+
+    console.log('Saving routine to database')
+    const data = {
+      input: prompt,
+      output: routine,
+      tags: null // You can set this to a specific value if needed
+    };
+    console.log('Data to be saved:', data); // Log the data being saved
+    const savedRoutine = await prisma.routine.create({
+      data
+    });
+    console.log('Created routine:', savedRoutine); // Log the created routine
+
     console.log('Sending successful response')
-    return createJSONResponse({ routine: response })
+    return createJSONResponse(data)
   } catch (error) {
     console.error('API Error:', error)
     return createJSONResponse({ 

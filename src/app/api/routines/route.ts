@@ -8,7 +8,8 @@ export async function GET() {
         createdAt: 'desc'
       }
     })
-    console.log('Fetched routines:', routines) // Log the fetched routines
+    console.log('Fetched routines:', routines); // Log the fetched routines
+    console.log('Fetched routines:', routines); // Log the fetched routines
     return NextResponse.json(routines)
   } catch (error) {
     console.error('Error fetching routines:', error) // Log the error
