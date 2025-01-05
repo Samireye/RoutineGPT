@@ -1,101 +1,154 @@
-import Image from "next/image";
+'use client'
+
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { RoutineHistory } from '@/components/routine-history'
+import ReactMarkdown from 'react-markdown'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+const samplePrompts = [
+  {
+    title: "Comprehensive Daily Routine",
+    prompt: "I want to become a more focused and productive person who starts the day early, maintains high energy throughout the day, and continuously learns new skills. I'm currently struggling with consistency and often feel mentally foggy."
+  },
+  {
+    title: "Morning Routine",
+    prompt: "Help me design a powerful morning routine that will set me up for success. I want to incorporate exercise, learning, and planning into my mornings."
+  },
+  {
+    title: "Learning Optimization",
+    prompt: "I want to improve my learning ability and memory while maintaining high energy levels. I need specific techniques for better focus and information retention."
+  },
+  {
+    title: "Work Productivity",
+    prompt: "I need a routine that helps me stay focused and productive during work hours while taking care of my health. Include strategies for managing energy and avoiding burnout."
+  }
+]
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [routineInput, setRoutineInput] = useState('')
+  const [generatedRoutine, setGeneratedRoutine] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleGenerateRoutine = async () => {
+    if (!routineInput.trim()) {
+      setError('Please describe your routine first')
+      return
+    }
+
+    setIsLoading(true)
+    setError('')
+    
+    try {
+      const response = await fetch('/api/generate-routine', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: routineInput }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate routine')
+      }
+
+      setGeneratedRoutine(data.routine)
+    } catch (err) {
+      console.error('Error:', err)
+      setError(err instanceof Error ? err.message : 'Failed to generate routine. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen p-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">RoutineGPT</h1>
+          <ThemeToggle />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <Tabs defaultValue="generate" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="generate">Generate Routine</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="generate" className="space-y-4">
+            <Card className="p-6">
+              <h2 className="text-2xl font-semibold mb-4">Describe Your Routine Goals</h2>
+              
+              <div className="mb-6">
+                <h3 className="text-lg font-medium mb-2">Try these examples:</h3>
+                <div className="grid grid-cols-1 gap-3">
+                  {samplePrompts.map((sample, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="h-auto py-3 px-4 text-left flex flex-col items-start w-full overflow-hidden"
+                      onClick={() => setRoutineInput(sample.prompt)}
+                    >
+                      <span className="font-medium mb-1 w-full">{sample.title}</span>
+                      <span className="text-sm text-muted-foreground w-full break-words whitespace-normal">
+                        {sample.prompt}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              <Textarea
+                value={routineInput}
+                onChange={(e) => setRoutineInput(e.target.value)}
+                placeholder="Describe your current routine and what you'd like to improve..."
+                className="mb-4 min-h-[150px]"
+              />
+              
+              {error && (
+                <p className="text-red-500 mb-4">Error: {error}</p>
+              )}
+              
+              <Button 
+                onClick={handleGenerateRoutine}
+                className="bg-gray-600 hover:bg-gray-700 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Generating...' : 'Generate Routine'}
+              </Button>
+            </Card>
+
+            {generatedRoutine && (
+              <Card className="p-6">
+                <h2 className="text-2xl font-semibold mb-4">Your Optimized Routine</h2>
+                <div className="prose dark:prose-invert max-w-none">
+                  <ReactMarkdown>{generatedRoutine}</ReactMarkdown>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedRoutine)
+                    }}
+                  >
+                    Copy to Clipboard
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="history">
+            <RoutineHistory />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
-  );
+  )
 }
