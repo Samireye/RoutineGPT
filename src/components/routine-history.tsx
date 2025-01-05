@@ -23,9 +23,22 @@ export function RoutineHistory() {
       try {
         const response = await fetch('/api/routines')
         const data = await response.json()
-        setRoutines(data)
+    
+        if (response.ok) {
+          // Check if data is an array
+          if (Array.isArray(data)) {
+            setRoutines(data)
+          } else {
+            console.error('Unexpected response format:', data)
+            setRoutines([]) // Set to empty array if the format is unexpected
+          }
+        } else {
+          console.error('Error fetching routines:', data.error)
+          setRoutines([]) // Optionally set to empty array or show an error message
+        }
       } catch (error) {
         console.error('Failed to fetch routines:', error)
+        setRoutines([]) // Set to empty array on error
       } finally {
         setLoading(false)
       }
