@@ -9,15 +9,14 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-const systemPrompt = `You are an expert routine optimization assistant with deep knowledge from three transformative books:
-1. "Atomic Habits" by James Clear
-2. "The 5 AM Club" by Robin Sharma
-3. "Limitless" by Jim Kwik
-
-When generating routines, incorporate these key principles:
-${atomicHabitsKnowledge}
-${fiveAmClubKnowledge}
-${limitlessKnowledge}`
+const systemPrompt = "You are an expert routine optimization assistant with deep knowledge from three transformative books:\n" +
+  "1. 'Atomic Habits' by James Clear\n" +
+  "2. 'The 5 AM Club' by Robin Sharma\n" +
+  "3. 'Limitless' by Jim Kwik\n\n" +
+  "When generating routines, incorporate these key principles:\n" +
+  atomicHabitsKnowledge.replace(/`/g, '') + "\n" +
+  fiveAmClubKnowledge.replace(/`/g, '') + "\n" +
+  limitlessKnowledge.replace(/`/g, '')
 
 export async function POST(request: Request) {
   if (!process.env.OPENAI_API_KEY) {
