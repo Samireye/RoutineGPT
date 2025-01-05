@@ -40,6 +40,7 @@ export async function POST(request: Request) {
   try {
     console.log('Parsing request body')
     const body = await request.json()
+    console.log('Request body:', body)
     const prompt = body?.prompt
 
     if (!prompt || typeof prompt !== 'string') {
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
         ],
         temperature: 0.7,
       })
+      console.log('OpenAI response:', completion)
     } catch (openaiError) {
       console.error('OpenAI API Error:', openaiError)
       return createJSONResponse({ error: 'Failed to generate routine from OpenAI' }, 500)
