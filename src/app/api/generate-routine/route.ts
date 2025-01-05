@@ -20,18 +20,28 @@ const systemPrompt = "You are an expert routine optimization assistant with deep
   cleanString(fiveAmClubKnowledge) + "\n" +
   cleanString(limitlessKnowledge)
 
+function createJSONResponse(data: any, status: number = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+}
+
 export async function POST(request: Request) {
   console.log('API route called')
+  console.log('Environment:', process.env.NODE_ENV)
+  console.log('OpenAI API Key exists:', !!process.env.OPENAI_API_KEY)
+  console.log('Database URL exists:', !!process.env.DATABASE_URL)
   
   if (!process.env.OPENAI_API_KEY) {
     console.error('OpenAI API key not configured')
-    return new NextResponse(
-      JSON.stringify({ error: 'OpenAI API key is not configured' }),
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    )
+    return createJSONResponse({ error: 'OpenAI API key is not configured' }, 500)
+  }
+
+  if (!process.env.DATABASE_URL) {
+    console.warn('Database URL not configured')
   }
 
   try {
@@ -41,69 +51,55 @@ export async function POST(request: Request) {
 
     if (!prompt || typeof prompt !== 'string') {
       console.error('Invalid or missing prompt')
-      return new NextResponse(
-        JSON.stringify({ error: 'Please provide a description of your routine goals' }),
-        { 
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      )
+      return createJSONResponse({ error: 'Please provide a description of your routine goals' }, 400)
     }
 
     console.log('Calling OpenAI API')
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.7,
-    })
+    let completion
+    try {
+      completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7,
+      })
+    } catch (openaiError) {
+      console.error('OpenAI API Error:', openaiError)
+      return createJSONResponse({ error: 'Failed to generate routine from OpenAI' }, 500)
+    }
 
     const response = completion.choices[0]?.message?.content
 
     if (!response) {
       console.error('No response from OpenAI')
-      return new NextResponse(
-        JSON.stringify({ error: 'No response generated' }),
-        { 
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      )
+      return createJSONResponse({ error: 'No response generated' }, 500)
     }
 
-    try {
-      console.log('Saving to database')
-      await prisma.routine.create({
-        data: {
-          input: prompt,
-          output: response,
-          tags: 'atomic-habits,5am-club,limitless'
-        }
-      })
-    } catch (dbError) {
-      console.error('Database error:', dbError)
+    if (process.env.DATABASE_URL) {
+      try {
+        console.log('Saving to database')
+        await prisma.routine.create({
+          data: {
+            input: prompt,
+            output: response,
+            tags: 'atomic-habits,5am-club,limitless'
+          }
+        })
+        console.log('Successfully saved to database')
+      } catch (dbError) {
+        console.error('Database error:', dbError)
+        // Continue even if database save fails
+      }
     }
 
     console.log('Sending successful response')
-    return new NextResponse(
-      JSON.stringify({ routine: response }),
-      { 
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    )
+    return createJSONResponse({ routine: response })
   } catch (error) {
     console.error('API Error:', error)
-    return new NextResponse(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Failed to generate routine'
-      }),
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    )
+    return createJSONResponse({ 
+      error: error instanceof Error ? error.message : 'Failed to generate routine'
+    }, 500)
   }
 }
