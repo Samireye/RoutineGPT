@@ -51,15 +51,20 @@ function TextDisplay({ content }: { content: unknown }) {
       }
 
       // Handle bold text (**text**)
-      const boldPattern = /\*\*(.*?)\*\*/g;
-      const textWithBold = line.replace(boldPattern, '<strong>$1</strong>');
+      const parts = line.split(/(\*\*.*?\*\*)/g);
+      const formattedParts = parts.map((part, j) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={j}>{part.slice(2, -2)}</strong>;
+        }
+        return part;
+      });
 
       // Handle bullet points
       if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         inNumberedList = false;
         return (
           <li key={i} className="ml-4 mb-2">
-            <span dangerouslySetInnerHTML={{ __html: textWithBold }} />
+            {formattedParts}
           </li>
         );
       }
@@ -73,18 +78,18 @@ function TextDisplay({ content }: { content: unknown }) {
         const content = line.replace(/^\d+\.\s/, '');
         return (
           <li key={i} className="ml-4 mb-2 list-decimal">
-            <span dangerouslySetInnerHTML={{ __html: content }} />
+            {formattedParts}
           </li>
         );
       } else {
         inNumberedList = false;
       }
 
-      // Regular paragraph with bold text
+      // Regular paragraph with formatted parts
       if (line.trim()) {
         return (
           <p key={i} className="mb-2">
-            <span dangerouslySetInnerHTML={{ __html: textWithBold }} />
+            {formattedParts}
           </p>
         );
       }
