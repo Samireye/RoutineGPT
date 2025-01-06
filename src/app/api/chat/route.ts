@@ -36,13 +36,13 @@ export async function POST(req: Request) {
 
     // Prepare conversation history for OpenAI
     const conversationHistory = routine.messages.map(msg => ({
-      role: msg.role as 'user' | 'assistant',
+      role: msg.role === 'user' ? 'user' : 'assistant',
       content: msg.content,
     }))
 
     // Add system message with context about the routine
     const systemMessage = {
-      role: 'system',
+      role: 'system' as const,
       content: `You are a helpful AI assistant managing this routine: ${routine.output}
 Your job is to:
 1. Help the user stick to their routine
