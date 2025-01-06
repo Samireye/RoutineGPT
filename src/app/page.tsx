@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { RoutineHistory } from '@/components/routine-history'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,7 +24,6 @@ function TextDisplay({ content }: { content: unknown }) {
     : JSON.stringify(rawContent);
 
   let inNumberedList = false;
-  let listCounter = 0;
 
   const formattedContent = textContent
     .split('\n')
@@ -33,7 +31,6 @@ function TextDisplay({ content }: { content: unknown }) {
       // Handle headers (##, ###)
       if (line.startsWith('## ')) {
         inNumberedList = false;
-        listCounter = 0;
         return (
           <h2 key={i} className="text-2xl font-bold mt-6 mb-4">
             {line.slice(3)}
@@ -42,7 +39,6 @@ function TextDisplay({ content }: { content: unknown }) {
       }
       if (line.startsWith('### ')) {
         inNumberedList = false;
-        listCounter = 0;
         return (
           <h3 key={i} className="text-xl font-bold mt-4 mb-3">
             {line.slice(4)}
@@ -57,7 +53,6 @@ function TextDisplay({ content }: { content: unknown }) {
       // Handle bullet points
       if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         inNumberedList = false;
-        listCounter = 0;
         return (
           <li key={i} className="ml-4 mb-2">
             <span dangerouslySetInnerHTML={{ __html: textWithBold }} />
@@ -70,9 +65,7 @@ function TextDisplay({ content }: { content: unknown }) {
       if (numberedListMatch) {
         if (!inNumberedList) {
           inNumberedList = true;
-          listCounter = 0;
         }
-        listCounter++;
         const content = line.replace(/^\d+\.\s/, '');
         return (
           <li key={i} className="ml-4 mb-2 list-decimal">
@@ -81,7 +74,6 @@ function TextDisplay({ content }: { content: unknown }) {
         );
       } else {
         inNumberedList = false;
-        listCounter = 0;
       }
 
       // Regular paragraph with bold text
@@ -105,85 +97,57 @@ function TextDisplay({ content }: { content: unknown }) {
 }
 
 const samplePrompts = [
-  {
-    title: "Comprehensive Daily Routine",
-    prompt: "I want to become a more focused and productive person who starts the day early, maintains high energy throughout the day, and continuously learns new skills. I'm currently struggling with consistency and often feel mentally foggy."
-  },
-  {
-    title: "Morning Routine",
-    prompt: "Help me design a powerful morning routine that will set me up for success. I want to incorporate exercise, learning, and planning into my mornings."
-  },
-  {
-    title: "Learning Optimization",
-    prompt: "I want to improve my learning ability and memory while maintaining high energy levels. I need specific techniques for better focus and information retention."
-  },
-  {
-    title: "Work Productivity",
-    prompt: "I need a routine that helps me stay focused and productive during work hours while taking care of my health. Include strategies for managing energy and avoiding burnout."
-  }
-]
+  "I want to improve my learning ability and memory while maintaining high energy levels. I need specific techniques for better focus and information retention.",
+  "I want to become more productive and organized. I need a routine that helps me manage my time better and get more done.",
+  "I want to improve my physical fitness and mental clarity. I need a balanced routine that includes exercise, meditation, and healthy habits."
+];
 
 export default function Home() {
-  const [routineInput, setRoutineInput] = useState('')
+  const [prompt, setPrompt] = useState('')
   const [generatedRoutine, setGeneratedRoutine] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleGenerateRoutine = async () => {
-    if (!routineInput.trim()) {
-      setError('Please describe your routine first')
-      return
+  const handleGenerate = async () => {
+    if (!prompt) {
+      toast.error('Please enter a prompt');
+      return;
     }
 
-    setIsLoading(true)
-    setError('')
-    
+    setIsGenerating(true);
     try {
-      console.log('Sending request to API...')
       const response = await fetch('/api/generate-routine', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: routineInput }),
-      })
+        body: JSON.stringify({ prompt }),
+      });
 
-      console.log('Response status:', response.status)
-      const text = await response.text()
-      console.log('Raw response:', text)
-
-      let data
-      try {
-        data = JSON.parse(text)
-      } catch (parseError) {
-        console.error('JSON Parse Error:', parseError)
-        console.error('Response text:', text)
-        throw new Error('Invalid response from server')
-      }
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate routine')
+        throw new Error(data.error || 'Failed to generate routine');
       }
 
-      if (!data.routine) {
-        throw new Error('No routine was generated')
+      if (!data.success || !data.routine) {
+        throw new Error('Invalid response format from server');
       }
 
-      setGeneratedRoutine(data.routine)
-    } catch (err) {
-      console.error('Error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to generate routine. Please try again.')
+      setGeneratedRoutine(data.routine.output || '');
+    } catch (error) {
+      console.error('Error generating routine:', error);
+      toast.error('Failed to generate routine. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   const handleCopy = async (text: string) => {
     try {
       await window.navigator.clipboard.writeText(text);
       toast.success('Copied to clipboard!');
-    } catch (err) {
-      console.error('Failed to copy text:', err);
+    } catch (error) {
+      console.error('Failed to copy text:', error);
       // Fallback method
       const textArea = document.createElement('textarea');
       textArea.value = text;
@@ -192,7 +156,7 @@ export default function Home() {
       try {
         document.execCommand('copy');
         toast.success('Copied to clipboard!');
-      } catch (err) {
+      } catch (error) {
         toast.error('Failed to copy text');
       }
       document.body.removeChild(textArea);
@@ -207,80 +171,75 @@ export default function Home() {
           <ThemeToggle />
         </div>
 
-        <Tabs defaultValue="generate" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="generate">Generate Routine</TabsTrigger>
+        <Tabs defaultValue="generate" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="generate">Generate</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="generate" className="space-y-4">
+          <TabsContent value="generate">
             <Card className="p-6">
-              <h2 className="text-2xl font-semibold mb-4">Describe Your Routine Goals</h2>
-              
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-2">Try these examples:</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {samplePrompts.map((sample, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      className="h-auto py-3 px-4 text-left flex flex-col items-start w-full overflow-hidden"
-                      onClick={() => setRoutineInput(sample.prompt)}
-                    >
-                      <span className="font-medium mb-1 w-full">{sample.title}</span>
-                      <span className="text-sm text-muted-foreground w-full break-words whitespace-normal">
-                        {sample.prompt}
-                      </span>
-                    </Button>
-                  ))}
+              <div className="space-y-4">
+                <h2 className="text-2xl font-semibold">Generate a Routine</h2>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Try these example prompts:
+                  </p>
+                  <div className="grid gap-2">
+                    {samplePrompts.map((samplePrompt, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        onClick={() => setPrompt(samplePrompt)}
+                        className="justify-start h-auto whitespace-normal"
+                      >
+                        {samplePrompt}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              
-              <Textarea
-                value={routineInput}
-                onChange={(e) => setRoutineInput(e.target.value)}
-                placeholder="Describe your current routine and what you'd like to improve..."
-                className="mb-4 min-h-[150px]"
-              />
-              
-              {error && (
-                <p className="text-red-500 mb-4">Error: {error}</p>
-              )}
-              
-              <Button 
-                onClick={handleGenerateRoutine}
-                className="bg-gray-600 hover:bg-gray-700 text-white"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Generating...' : 'Generate Routine'}
-              </Button>
-            </Card>
 
-            {generatedRoutine && (
-              <Card className="p-6">
-                <h2 className="text-2xl font-semibold mb-4">Your Optimized Routine</h2>
-                <div className="prose dark:prose-invert max-w-none">
-                  <TextDisplay content={generatedRoutine} />
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleCopy(generatedRoutine)}
-                    className="flex items-center gap-2"
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Enter your prompt here..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    className="h-24"
+                  />
+                  <Button 
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                    className="w-full"
                   >
-                    <BsClipboard className="h-4 w-4" />
-                    Copy to Clipboard
+                    {isGenerating ? 'Generating...' : 'Generate Routine'}
                   </Button>
                 </div>
-              </Card>
-            )}
-          </TabsContent>
 
+                {generatedRoutine && (
+                  <div className="mt-8">
+                    <h3 className="text-xl font-semibold mb-4">Your Optimized Routine</h3>
+                    <div className="prose dark:prose-invert max-w-none mb-4">
+                      <TextDisplay content={generatedRoutine} />
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleCopy(generatedRoutine)}
+                        className="flex items-center gap-2"
+                      >
+                        <BsClipboard className="h-4 w-4" />
+                        Copy to Clipboard
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </TabsContent>
           <TabsContent value="history">
             <RoutineHistory />
           </TabsContent>
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

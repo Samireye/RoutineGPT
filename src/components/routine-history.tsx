@@ -28,7 +28,6 @@ function TextDisplay({ content }: { content: unknown }) {
     : JSON.stringify(rawContent);
 
   let inNumberedList = false;
-  let listCounter = 0;
 
   const formattedContent = textContent
     .split('\n')
@@ -36,7 +35,6 @@ function TextDisplay({ content }: { content: unknown }) {
       // Handle headers (##, ###)
       if (line.startsWith('## ')) {
         inNumberedList = false;
-        listCounter = 0;
         return (
           <h2 key={i} className="text-2xl font-bold mt-6 mb-4">
             {line.slice(3)}
@@ -45,7 +43,6 @@ function TextDisplay({ content }: { content: unknown }) {
       }
       if (line.startsWith('### ')) {
         inNumberedList = false;
-        listCounter = 0;
         return (
           <h3 key={i} className="text-xl font-bold mt-4 mb-3">
             {line.slice(4)}
@@ -60,7 +57,6 @@ function TextDisplay({ content }: { content: unknown }) {
       // Handle bullet points
       if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         inNumberedList = false;
-        listCounter = 0;
         return (
           <li key={i} className="ml-4 mb-2">
             <span dangerouslySetInnerHTML={{ __html: textWithBold }} />
@@ -73,9 +69,7 @@ function TextDisplay({ content }: { content: unknown }) {
       if (numberedListMatch) {
         if (!inNumberedList) {
           inNumberedList = true;
-          listCounter = 0;
         }
-        listCounter++;
         const content = line.replace(/^\d+\.\s/, '');
         return (
           <li key={i} className="ml-4 mb-2 list-decimal">
@@ -84,7 +78,6 @@ function TextDisplay({ content }: { content: unknown }) {
         );
       } else {
         inNumberedList = false;
-        listCounter = 0;
       }
 
       // Regular paragraph with bold text
@@ -125,6 +118,8 @@ export function RoutineHistory() {
             tags: routine.tags
           }));
           setRoutines(formattedRoutines);
+        } else {
+          console.error('Failed to fetch routines:', response.status);
         }
       } catch (error) {
         console.error('Error fetching routines:', error);
@@ -150,8 +145,8 @@ export function RoutineHistory() {
     try {
       await window.navigator.clipboard.writeText(text);
       toast.success('Copied to clipboard!');
-    } catch (err) {
-      console.error('Failed to copy text:', err);
+    } catch (error) {
+      console.error('Failed to copy text:', error);
       // Fallback method
       const textArea = document.createElement('textarea');
       textArea.value = text;
@@ -160,7 +155,7 @@ export function RoutineHistory() {
       try {
         document.execCommand('copy');
         toast.success('Copied to clipboard!');
-      } catch (err) {
+      } catch (error) {
         toast.error('Failed to copy text');
       }
       document.body.removeChild(textArea);
