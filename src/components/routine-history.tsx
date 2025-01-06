@@ -5,16 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { BsClipboard } from 'react-icons/bs'
 import { toast } from 'sonner'
-import type { Routine } from '@prisma/client'
+import type { Routine, Message } from '@prisma/client'
 import { Chat } from './chat'
 
 interface RoutineWithMessages extends Routine {
-  messages: {
-    id: string
-    content: string
-    role: string
-    createdAt: string
-  }[]
+  messages: Message[]
 }
 
 function TextDisplay({ content }: { content: unknown }) {
