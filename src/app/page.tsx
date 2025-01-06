@@ -76,7 +76,7 @@ function TextDisplay({ content }: { content: unknown }) {
     });
 
   return (
-    <div className="prose dark:prose-invert">
+    <div className="prose dark:prose-invert max-w-none">
       {formattedContent}
     </div>
   );
@@ -149,79 +149,89 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">RoutineGPT</h1>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto px-4 py-8 md:py-16">
+        <header className="flex justify-between items-center mb-12">
+          <h1 className="text-4xl font-bold tracking-tight">RoutineGPT</h1>
           <ThemeToggle />
-        </div>
+        </header>
 
-        <Tabs defaultValue="generate" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="generate" className="space-y-8">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
             <TabsTrigger value="generate">Generate</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
-          <TabsContent value="generate">
-            <Card className="p-6">
+
+          <TabsContent value="generate" className="space-y-8">
+            <div className="max-w-2xl mx-auto space-y-8">
               <div className="space-y-4">
-                <h2 className="text-2xl font-semibold">Generate a Routine</h2>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Try these example prompts:
-                  </p>
-                  <div className="grid gap-2">
-                    {samplePrompts.map((samplePrompt, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        onClick={() => setPrompt(samplePrompt)}
-                        className="justify-start h-auto whitespace-normal"
-                      >
-                        {samplePrompt}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Textarea
-                    placeholder="Enter your prompt here..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    className="h-24"
-                  />
-                  <Button 
-                    onClick={handleGenerate}
-                    disabled={isGenerating}
-                    className="w-full"
-                  >
-                    {isGenerating ? 'Generating...' : 'Generate Routine'}
-                  </Button>
-                </div>
-
-                {generatedRoutine && (
-                  <div className="mt-8">
-                    <h3 className="text-xl font-semibold mb-4">Your Optimized Routine</h3>
-                    <div className="prose dark:prose-invert max-w-none mb-4">
-                      <TextDisplay content={generatedRoutine} />
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleCopy(generatedRoutine)}
-                        className="flex items-center gap-2"
-                      >
-                        <BsClipboard className="h-4 w-4" />
-                        Copy to Clipboard
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                <h2 className="text-2xl font-semibold text-center">Create Your Perfect Routine</h2>
+                <p className="text-muted-foreground text-center">
+                  Describe your goals and preferences, and I'll help you design an optimized routine.
+                </p>
               </div>
-            </Card>
+
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Enter your prompt here..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="min-h-[120px] text-lg leading-relaxed"
+                />
+                <Button 
+                  onClick={handleGenerate}
+                  disabled={isGenerating}
+                  className="w-full py-6 text-lg"
+                >
+                  {isGenerating ? 'Generating...' : 'Generate Routine'}
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground text-center">
+                  Try these examples:
+                </p>
+                <div className="grid gap-3">
+                  {samplePrompts.map((samplePrompt, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setPrompt(samplePrompt)}
+                      className="text-left p-4 rounded-lg border border-border hover:bg-muted transition-colors text-sm text-muted-foreground"
+                    >
+                      {samplePrompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {generatedRoutine && (
+              <div className="max-w-3xl mx-auto">
+                <Card className="p-6 md:p-8">
+                  <div className="mb-6 flex justify-between items-center">
+                    <h3 className="text-xl font-semibold">Your Optimized Routine</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopy(generatedRoutine)}
+                      className="flex items-center gap-2"
+                    >
+                      <BsClipboard className="h-4 w-4" />
+                      Copy
+                    </Button>
+                  </div>
+                  <div className="prose dark:prose-invert max-w-none">
+                    <TextDisplay content={generatedRoutine} />
+                  </div>
+                </Card>
+              </div>
+            )}
           </TabsContent>
+
           <TabsContent value="history">
-            <RoutineHistory />
+            <div className="max-w-3xl mx-auto">
+              <RoutineHistory />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
