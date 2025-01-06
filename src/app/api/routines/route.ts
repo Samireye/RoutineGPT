@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import type { Routine } from '@prisma/client'
+import type { Routine, Message } from '@prisma/client'
 
-export async function GET() {
+interface RoutineWithMessages extends Routine {
+  messages: Message[]
+}
+
+export async function GET(): Promise<NextResponse<RoutineWithMessages[]>> {
   try {
     const routines = await prisma.routine.findMany({
       orderBy: {
