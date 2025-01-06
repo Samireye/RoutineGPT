@@ -145,8 +145,7 @@ export function RoutineHistory() {
     try {
       await window.navigator.clipboard.writeText(text);
       toast.success('Copied to clipboard!');
-    } catch (error) {
-      console.error('Failed to copy text:', error);
+    } catch {
       // Fallback method
       const textArea = document.createElement('textarea');
       textArea.value = text;
@@ -155,7 +154,7 @@ export function RoutineHistory() {
       try {
         document.execCommand('copy');
         toast.success('Copied to clipboard!');
-      } catch (error) {
+      } catch {
         toast.error('Failed to copy text');
       }
       document.body.removeChild(textArea);
