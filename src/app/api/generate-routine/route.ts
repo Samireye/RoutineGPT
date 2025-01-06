@@ -2,9 +2,8 @@ import OpenAI from 'openai'
 import { atomicHabitsKnowledge } from '@/lib/atomic-habits'
 import { fiveAmClubKnowledge } from '@/lib/fiveam-club'
 import { limitlessKnowledge } from '@/lib/limitless'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 
-const prisma = new PrismaClient()
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })

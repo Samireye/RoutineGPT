@@ -6,8 +6,17 @@ import { Card } from '@/components/ui/card'
 import { BsClipboard } from 'react-icons/bs'
 import { toast } from 'sonner'
 import type { Routine } from '@prisma/client'
+import { Chat } from './chat'
 
-// Simple component to display text with basic markdown-like formatting
+interface RoutineWithMessages extends Routine {
+  messages: {
+    id: string
+    content: string
+    role: string
+    createdAt: string
+  }[]
+}
+
 function TextDisplay({ content }: { content: unknown }) {
   if (!content) return null;
   
@@ -74,8 +83,9 @@ function TextDisplay({ content }: { content: unknown }) {
 }
 
 export function RoutineHistory() {
-  const [routines, setRoutines] = useState<Routine[]>([])
+  const [routines, setRoutines] = useState<RoutineWithMessages[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchRoutines = async () => {
@@ -135,7 +145,7 @@ export function RoutineHistory() {
       <div className="text-center mb-8">
         <h2 className="text-2xl font-semibold">Your Generated Routines</h2>
         <p className="text-muted-foreground mt-2">
-          View and copy your previously generated routines
+          View and chat about your previously generated routines
         </p>
       </div>
 
@@ -159,8 +169,32 @@ export function RoutineHistory() {
                 Copy
               </Button>
             </div>
-            <div className="prose dark:prose-invert max-w-none">
+            <div className="prose dark:prose-invert max-w-none mb-6">
               <TextDisplay content={routine.output} />
+            </div>
+            <div className="space-y-4">
+              {selectedRoutineId === routine.id ? (
+                <>
+                  <div className="border-t pt-6">
+                    <Chat routineId={routine.id} initialMessages={routine.messages} />
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedRoutineId(null)}
+                    className="w-full"
+                  >
+                    Close Chat
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedRoutineId(routine.id)}
+                  className="w-full"
+                >
+                  Chat About This Routine
+                </Button>
+              )}
             </div>
           </Card>
         ))}

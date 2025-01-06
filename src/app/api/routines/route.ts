@@ -4,15 +4,27 @@ import type { Routine } from '@prisma/client'
 
 export async function GET() {
   try {
-    const routines: Routine[] = await prisma.routine.findMany({
+    const routines = await prisma.routine.findMany({
       orderBy: {
         createdAt: 'desc'
+      },
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: 'asc'
+          },
+          take: 1, // Get just the initial message
+        }
       }
-    });
-    return NextResponse.json(routines);
+    })
+
+    return NextResponse.json(routines)
   } catch (error) {
-    console.error('Failed to fetch routines:', error);
-    return NextResponse.json({ error: 'Failed to fetch routines' }, { status: 500 });
+    console.error('Failed to fetch routines:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch routines' },
+      { status: 500 }
+    )
   }
 }
 
