@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { prisma } from '@/lib/db'
+import { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -35,14 +36,14 @@ export async function POST(req: Request) {
     }
 
     // Prepare conversation history for OpenAI
-    const conversationHistory = routine.messages.map(msg => ({
+    const conversationHistory: ChatCompletionMessageParam[] = routine.messages.map(msg => ({
       role: msg.role === 'user' ? 'user' : 'assistant',
       content: msg.content,
     }))
 
     // Add system message with context about the routine
-    const systemMessage = {
-      role: 'system' as const,
+    const systemMessage: ChatCompletionMessageParam = {
+      role: 'system',
       content: `You are a helpful AI assistant managing this routine: ${routine.output}
 Your job is to:
 1. Help the user stick to their routine
