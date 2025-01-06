@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import type { Routine, Message } from '@prisma/client'
+import type { Routine } from '@prisma/client'
 
-interface RoutineWithMessages extends Routine {
-  messages: Message[]
+type ErrorResponse = {
+  error: string
 }
 
-export async function GET(): Promise<NextResponse<RoutineWithMessages[]>> {
+type ApiResponse<T> = NextResponse<T | ErrorResponse>
+
+export async function GET(): Promise<ApiResponse<Routine[]>> {
   try {
     const routines = await prisma.routine.findMany({
       orderBy: {
@@ -16,8 +18,7 @@ export async function GET(): Promise<NextResponse<RoutineWithMessages[]>> {
         messages: {
           orderBy: {
             createdAt: 'asc'
-          },
-          take: 1, // Get just the initial message
+          }
         }
       }
     })
@@ -32,15 +33,29 @@ export async function GET(): Promise<NextResponse<RoutineWithMessages[]>> {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<ApiResponse<Routine>> {
   try {
-    const data = await request.json()
+    const body = await request.json()
+    
+    // Validate request body
+    if (!body.input || !body.output) {
+      return NextResponse.json(
+        { error: 'Input and output are required' },
+        { status: 400 }
+      )
+    }
+
     const routine = await prisma.routine.create({
-      data
+      data: {
+        input: body.input,
+        output: body.output,
+        tags: body.tags || null
+      }
     })
+
     return NextResponse.json(routine)
   } catch (error) {
-    console.error('Error creating routine:', error) // Log the error
+    console.error('Error creating routine:', error)
     return NextResponse.json(
       { error: 'Failed to create routine' },
       { status: 500 }
