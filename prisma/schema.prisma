@@ -19,4 +19,25 @@ model Routine {
   input     String
   output    String   @db.Text
   tags      String?
+  reminders Reminder[]
+  messages  Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  content   String
+  role      String   // 'user' or 'assistant'
+  routineId String
+  routine   Routine  @relation(fields: [routineId], references: [id])
+}
+
+model Reminder {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  time      DateTime
+  message   String
+  completed Boolean  @default(false)
+  routineId String
+  routine   Routine  @relation(fields: [routineId], references: [id])
 }

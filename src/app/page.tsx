@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { BsClipboard } from 'react-icons/bs'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
+import { Chat } from '@/components/chat' // Import the Chat component
 
 // Simple component to display text with basic markdown-like formatting
 function TextDisplay({ content }: { content: unknown }) {
@@ -92,6 +93,7 @@ export default function Home() {
   const [prompt, setPrompt] = useState('')
   const [generatedRoutine, setGeneratedRoutine] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [currentRoutineId, setCurrentRoutineId] = useState('') // Add a state to store the current routine ID
 
   const handleGenerate = async () => {
     if (!prompt) {
@@ -120,6 +122,7 @@ export default function Home() {
       }
 
       setGeneratedRoutine(data.routine.output || '');
+      setCurrentRoutineId(data.routine.id || '') // Set the current routine ID
     } catch (error) {
       console.error('Error generating routine:', error);
       toast.error('Failed to generate routine. Please try again.');
@@ -206,7 +209,7 @@ export default function Home() {
             </div>
 
             {generatedRoutine && (
-              <div className="max-w-3xl mx-auto">
+              <div className="max-w-3xl mx-auto space-y-8">
                 <Card className="p-6 md:p-8">
                   <div className="mb-6 flex justify-between items-center">
                     <h3 className="text-xl font-semibold">Your Optimized Routine</h3>
@@ -224,6 +227,15 @@ export default function Home() {
                     <TextDisplay content={generatedRoutine} />
                   </div>
                 </Card>
+
+                {/* Chat Interface */}
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-center">Chat with Your Routine Assistant</h3>
+                  <p className="text-muted-foreground text-center">
+                    Ask questions, get reminders, or request modifications to your routine
+                  </p>
+                  <Chat routineId={currentRoutineId} />
+                </div>
               </div>
             )}
           </TabsContent>

@@ -96,10 +96,22 @@ export async function POST(request: Request) {
     });
     console.log('Created routine:', savedRoutine); // Log the created routine
 
+    // Create initial assistant message
+    await prisma.message.create({
+      data: {
+        content: "I've created your routine! Feel free to ask any questions about it or request modifications. I can also help you set up reminders for different parts of the routine.",
+        role: 'assistant',
+        routineId: savedRoutine.id,
+      },
+    })
+
     console.log('Sending successful response')
     return createJSONResponse({
       success: true,
-      routine: savedRoutine
+      routine: {
+        id: savedRoutine.id,
+        output: savedRoutine.output,
+      },
     })
   } catch (error) {
     console.error('API Error:', error)
