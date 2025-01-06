@@ -26,6 +26,22 @@ function TextDisplay({ content }: { content: unknown }) {
   const formattedContent = textContent
     .split('\n')
     .map((line, i) => {
+      // Handle headers (##, ###)
+      if (line.startsWith('## ')) {
+        return (
+          <h2 key={i} className="text-2xl font-bold mt-6 mb-4">
+            {line.slice(3)}
+          </h2>
+        );
+      }
+      if (line.startsWith('### ')) {
+        return (
+          <h3 key={i} className="text-xl font-bold mt-4 mb-3">
+            {line.slice(4)}
+          </h3>
+        );
+      }
+
       // Handle bullet points
       if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         return (
@@ -38,9 +54,10 @@ function TextDisplay({ content }: { content: unknown }) {
       // Handle numbered lists
       const numberedListMatch = line.match(/^\d+\.\s/);
       if (numberedListMatch) {
+        const listText = line.slice(numberedListMatch[0].length);
         return (
           <li key={i} className="ml-4 mb-2 list-decimal">
-            {line.slice(numberedListMatch[0].length)}
+            {listText}
           </li>
         );
       }
