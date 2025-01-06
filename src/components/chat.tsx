@@ -51,7 +51,7 @@ export function Chat({ routineId, initialMessages = [] }: ChatProps) {
 
       const data = await response.json()
       setMessages(prev => [...prev, data.userMessage, data.assistantMessage])
-    } catch (error) {
+    } catch {
       toast.error('Failed to send message')
       setInput(userMessage) // Restore the message if it failed
     } finally {

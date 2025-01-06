@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
+import OpenAI from 'openai'
 import { prisma } from '@/lib/db'
-import { Configuration, OpenAIApi } from 'openai'
 
-const config = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
-
-const openai = new OpenAIApi(config)
 
 export async function POST(req: Request) {
   try {
@@ -38,7 +36,7 @@ export async function POST(req: Request) {
 
     // Prepare conversation history for OpenAI
     const conversationHistory = routine.messages.map(msg => ({
-      role: msg.role,
+      role: msg.role as 'user' | 'assistant',
       content: msg.content,
     }))
 
@@ -57,7 +55,7 @@ Keep responses concise and focused on helping the user maintain and improve thei
     }
 
     // Get AI response
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [
         systemMessage,
@@ -67,7 +65,7 @@ Keep responses concise and focused on helping the user maintain and improve thei
       temperature: 0.7,
     })
 
-    const aiResponse = completion.data.choices[0]?.message?.content || 'I apologize, but I am unable to respond at the moment.'
+    const aiResponse = completion.choices[0]?.message?.content || 'I apologize, but I am unable to respond at the moment.'
 
     // Save AI response
     const assistantMessage = await prisma.message.create({

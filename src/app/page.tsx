@@ -170,7 +170,7 @@ export default function Home() {
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold text-center">Create Your Perfect Routine</h2>
                 <p className="text-muted-foreground text-center">
-                  Describe your goals and preferences, and I'll help you design an optimized routine.
+                  Describe your goals and preferences, and I’ll help you design an optimized routine.
                 </p>
               </div>
 
