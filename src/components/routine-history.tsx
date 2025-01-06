@@ -27,44 +27,14 @@ function TextDisplay({ content }: { content: unknown }) {
     ? rawContent 
     : JSON.stringify(rawContent);
 
-  let inNumberedList = false;
-
   const formattedContent = textContent
     .split('\n')
     .map((line, i) => {
-      // Handle headers (##, ###)
-      if (line.startsWith('## ')) {
-        inNumberedList = false;
-        return (
-          <h2 key={i} className="text-2xl font-bold mt-6 mb-4">
-            {line.slice(3)}
-          </h2>
-        );
-      }
-      if (line.startsWith('### ')) {
-        inNumberedList = false;
-        return (
-          <h3 key={i} className="text-xl font-bold mt-4 mb-3">
-            {line.slice(4)}
-          </h3>
-        );
-      }
-
-      // Handle bold text (**text**)
-      const parts = line.split(/(\*\*.*?\*\*)/g);
-      const formattedParts = parts.map((part, j) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={j}>{part.slice(2, -2)}</strong>;
-        }
-        return part;
-      });
-
       // Handle bullet points
       if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-        inNumberedList = false;
         return (
           <li key={i} className="ml-4 mb-2">
-            {formattedParts}
+            {line.slice(2)}
           </li>
         );
       }
@@ -72,24 +42,18 @@ function TextDisplay({ content }: { content: unknown }) {
       // Handle numbered lists
       const numberedListMatch = line.match(/^\d+\.\s/);
       if (numberedListMatch) {
-        if (!inNumberedList) {
-          inNumberedList = true;
-        }
-        const content = line.replace(/^\d+\.\s/, '');
         return (
           <li key={i} className="ml-4 mb-2 list-decimal">
-            {formattedParts}
+            {line.slice(numberedListMatch[0].length)}
           </li>
         );
-      } else {
-        inNumberedList = false;
       }
 
-      // Regular paragraph with formatted parts
+      // Regular paragraph
       if (line.trim()) {
         return (
           <p key={i} className="mb-2">
-            {formattedParts}
+            {line}
           </p>
         );
       }
