@@ -1,22 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
-export async function GET() {
+function createJSONResponse(data: any, status: number = 200) {
+  return NextResponse.json(data, { status });
+}
+
+export async function GET(request: Request) {
   try {
-    const routines = await prisma.routine.findMany({
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
-    console.log('Fetched routines:', routines); // Log the fetched routines
-    console.log('Fetched routines:', routines); // Log the fetched routines
-    return NextResponse.json(routines)
+    const routines = await prisma.routine.findMany();
+    return createJSONResponse(routines);
   } catch (error) {
-    console.error('Error fetching routines:', error) // Log the error
-    return NextResponse.json(
-      { error: 'Failed to fetch routines' },
-      { status: 500 }
-    )
+    console.error('Error fetching routines:', error);
+    return createJSONResponse({ error: 'Failed to fetch routines' }, 500);
   }
 }
 

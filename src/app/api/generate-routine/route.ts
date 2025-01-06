@@ -97,7 +97,10 @@ export async function POST(request: Request) {
     console.log('Created routine:', savedRoutine); // Log the created routine
 
     console.log('Sending successful response')
-    return createJSONResponse(data)
+    return createJSONResponse({
+      success: true,
+      routine: savedRoutine
+    })
   } catch (error) {
     console.error('API Error:', error)
     return createJSONResponse({ 

@@ -2,12 +2,107 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { RoutineHistory } from '@/components/routine-history'
-import ReactMarkdown from 'react-markdown'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { toast } from 'sonner'
+import { BsClipboard } from 'react-icons/bs'
+import { Card } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
+
+// Simple component to display text with basic markdown-like formatting
+function TextDisplay({ content }: { content: unknown }) {
+  if (!content) return null;
+  
+  // If content is an object with an output property, use that
+  const rawContent = typeof content === 'object' && content !== null && 'output' in content
+    ? (content as { output: unknown }).output
+    : content;
+    
+  const textContent = typeof rawContent === 'string' 
+    ? rawContent 
+    : JSON.stringify(rawContent);
+
+  let inNumberedList = false;
+  let listCounter = 0;
+
+  const formattedContent = textContent
+    .split('\n')
+    .map((line, i) => {
+      // Handle headers (##, ###)
+      if (line.startsWith('## ')) {
+        inNumberedList = false;
+        listCounter = 0;
+        return (
+          <h2 key={i} className="text-2xl font-bold mt-6 mb-4">
+            {line.slice(3)}
+          </h2>
+        );
+      }
+      if (line.startsWith('### ')) {
+        inNumberedList = false;
+        listCounter = 0;
+        return (
+          <h3 key={i} className="text-xl font-bold mt-4 mb-3">
+            {line.slice(4)}
+          </h3>
+        );
+      }
+
+      // Handle bold text (**text**)
+      const boldPattern = /\*\*(.*?)\*\*/g;
+      const textWithBold = line.replace(boldPattern, '<strong>$1</strong>');
+
+      // Handle bullet points
+      if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+        inNumberedList = false;
+        listCounter = 0;
+        return (
+          <li key={i} className="ml-4 mb-2">
+            <span dangerouslySetInnerHTML={{ __html: textWithBold }} />
+          </li>
+        );
+      }
+
+      // Handle numbered lists
+      const numberedListMatch = line.match(/^\d+\.\s/);
+      if (numberedListMatch) {
+        if (!inNumberedList) {
+          inNumberedList = true;
+          listCounter = 0;
+        }
+        listCounter++;
+        const content = line.replace(/^\d+\.\s/, '');
+        return (
+          <li key={i} className="ml-4 mb-2 list-decimal">
+            <span dangerouslySetInnerHTML={{ __html: content }} />
+          </li>
+        );
+      } else {
+        inNumberedList = false;
+        listCounter = 0;
+      }
+
+      // Regular paragraph with bold text
+      if (line.trim()) {
+        return (
+          <p key={i} className="mb-2">
+            <span dangerouslySetInnerHTML={{ __html: textWithBold }} />
+          </p>
+        );
+      }
+
+      // Empty lines become spacing
+      return <div key={i} className="h-4" />;
+    });
+
+  return (
+    <div className="prose dark:prose-invert">
+      {formattedContent}
+    </div>
+  );
+}
 
 const samplePrompts = [
   {
@@ -83,6 +178,27 @@ export default function Home() {
     }
   }
 
+  const handleCopy = async (text: string) => {
+    try {
+      await window.navigator.clipboard.writeText(text);
+      toast.success('Copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+      // Fallback method
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast.success('Copied to clipboard!');
+      } catch (err) {
+        toast.error('Failed to copy text');
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
@@ -144,15 +260,15 @@ export default function Home() {
               <Card className="p-6">
                 <h2 className="text-2xl font-semibold mb-4">Your Optimized Routine</h2>
                 <div className="prose dark:prose-invert max-w-none">
-                  <ReactMarkdown>{generatedRoutine}</ReactMarkdown>
+                  <TextDisplay content={generatedRoutine} />
                 </div>
                 <div className="flex gap-2 mt-4">
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      navigator.clipboard.writeText(generatedRoutine)
-                    }}
+                    onClick={() => handleCopy(generatedRoutine)}
+                    className="flex items-center gap-2"
                   >
+                    <BsClipboard className="h-4 w-4" />
                     Copy to Clipboard
                   </Button>
                 </div>
