@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 
@@ -46,7 +45,7 @@ export default function CalendarPage() {
       
       const data = await response.json()
       setTasks(data)
-    } catch (error) {
+    } catch {
       toast.error('Failed to load tasks')
     } finally {
       setIsLoading(false)
@@ -82,7 +81,7 @@ export default function CalendarPage() {
       ))
       toast.success('Task status updated')
       setIsDialogOpen(false)
-    } catch (error) {
+    } catch {
       toast.error('Failed to update task status')
     }
   }
