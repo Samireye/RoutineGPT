@@ -32,6 +32,7 @@ export default function CalendarPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [routineId, setRoutineId] = useState<string | null>(null)
 
   const fetchTasks = async (date: Date) => {
     try {
@@ -39,7 +40,7 @@ export default function CalendarPage() {
       const endDate = endOfMonth(date).toISOString()
       
       const response = await fetch(
-        `/api/tasks?startDate=${startDate}&endDate=${endDate}`
+        `/api/tasks?startDate=${startDate}&endDate=${endDate}${routineId ? `&routineId=${routineId}` : ''}`
       )
       if (!response.ok) throw new Error('Failed to fetch tasks')
       
@@ -52,9 +53,29 @@ export default function CalendarPage() {
     }
   }
 
+  const fetchRoutines = async () => {
+    try {
+      const response = await fetch('/api/routines')
+      if (!response.ok) throw new Error('Failed to fetch routines')
+      
+      const data = await response.json()
+      if (data.length > 0) {
+        setRoutineId(data[0].id) // Select first routine by default
+      }
+    } catch {
+      toast.error('Failed to load routines')
+    }
+  }
+
   useEffect(() => {
-    fetchTasks(selectedDate)
-  }, [selectedDate])
+    fetchRoutines()
+  }, [])
+
+  useEffect(() => {
+    if (routineId) {
+      fetchTasks(selectedDate)
+    }
+  }, [selectedDate, routineId])
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task)
