@@ -13,23 +13,50 @@ datasource db {
 }
 
 model Routine {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   input     String
   output    String   @db.Text
   tags      String?
-  reminders Reminder[]
   messages  Message[]
+  tasks     Task[]    // Add relation to tasks
+  reminders Reminder[]
 }
 
 model Message {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   content   String
-  role      String   // 'user' or 'assistant'
+  role      String
+  routine   Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
   routineId String
-  routine   Routine  @relation(fields: [routineId], references: [id])
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime?
+  isRecurring Boolean   @default(false)
+  frequency   String?   // daily, weekly, monthly
+  status      String    @default("pending") // pending, completed, skipped
+  routine     Routine   @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  routineId   String
+  progress    Progress[]
+}
+
+model Progress {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  date      DateTime
+  status    String   // completed, skipped, failed
+  notes     String?
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId    String
 }
 
 model Reminder {
