@@ -22,6 +22,7 @@ model Routine {
   messages  Message[]
   tasks     Task[]    // Add relation to tasks
   reminders Reminder[]
+  schedule  String   @default("[]") // JSON string of daily schedule
 }
 
 model Message {

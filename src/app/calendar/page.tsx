@@ -53,21 +53,21 @@ export default function CalendarPage() {
     }
   }
 
-  const fetchRoutines = async () => {
-    try {
-      const response = await fetch('/api/routines')
-      if (!response.ok) throw new Error('Failed to fetch routines')
-      
-      const data = await response.json()
-      if (data.length > 0) {
-        setRoutineId(data[0].id) // Select first routine by default
-      }
-    } catch {
-      toast.error('Failed to load routines')
-    }
-  }
-
   useEffect(() => {
+    const fetchRoutines = async () => {
+      try {
+        const response = await fetch('/api/routines')
+        if (!response.ok) throw new Error('Failed to fetch routines')
+        
+        const data = await response.json()
+        if (data.length > 0) {
+          setRoutineId(data[0].id) // Select first routine by default
+        }
+      } catch {
+        toast.error('Failed to load routines')
+      }
+    }
+    
     fetchRoutines()
   }, [])
 
@@ -75,7 +75,7 @@ export default function CalendarPage() {
     if (routineId) {
       fetchTasks(selectedDate)
     }
-  }, [selectedDate, routineId])
+  }, [selectedDate, routineId, fetchTasks])
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task)
